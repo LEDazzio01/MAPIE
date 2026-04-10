@@ -178,12 +178,8 @@ class SplitConformalRegressor:
         _raise_error_if_method_already_called("fit", self._is_fitted)
 
         cloned_estimator = clone(self._estimator)
-        fit_params_, sample_weight = _prepare_fit_params_and_sample_weight(
-            fit_params
-        )
-        _fit_estimator(
-            cloned_estimator, X_train, y_train, sample_weight, **fit_params_
-        )
+        fit_params_, sample_weight = _prepare_fit_params_and_sample_weight(fit_params)
+        _fit_estimator(cloned_estimator, X_train, y_train, sample_weight, **fit_params_)
         self._mapie_regressor.estimator = cloned_estimator
 
         self._is_fitted = True

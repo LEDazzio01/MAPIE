@@ -559,22 +559,27 @@ def test_split_conformal_regressor_pipeline_sample_weight() -> None:
     from mapie.regression import SplitConformalRegressor
     from mapie.utils import train_conformalize_test_split
 
-    X, y = make_regression(
-        n_samples=500, n_features=5, noise=20, random_state=42
-    )
-    (X_train, X_conf, X_test,
-     y_train, y_conf, y_test) = train_conformalize_test_split(
-        X, y, train_size=0.6, conformalize_size=0.2, test_size=0.2,
+    X, y = make_regression(n_samples=500, n_features=5, noise=20, random_state=42)
+    (X_train, X_conf, X_test, y_train, y_conf, y_test) = train_conformalize_test_split(
+        X,
+        y,
+        train_size=0.6,
+        conformalize_size=0.2,
+        test_size=0.2,
         random_state=42,
     )
     sw = np.random.RandomState(42).rand(len(X_train))
 
-    pipeline = Pipeline([
-        ("poly", PolynomialFeatures(degree=1, include_bias=False)),
-        ("lr", LinearRegression()),
-    ])
+    pipeline = Pipeline(
+        [
+            ("poly", PolynomialFeatures(degree=1, include_bias=False)),
+            ("lr", LinearRegression()),
+        ]
+    )
     mapie_reg = SplitConformalRegressor(
-        estimator=pipeline, confidence_level=0.95, prefit=False,
+        estimator=pipeline,
+        confidence_level=0.95,
+        prefit=False,
     )
     # This should not raise ValueError
     mapie_reg.fit(X_train, y_train, {"sample_weight": sw})
