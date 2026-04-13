@@ -242,27 +242,22 @@ def _check_null_weight(
 # TODO back-end: this will be useless in v1 because we'll not distinguish
 # sample_weight from other fit_params
 def _fit_estimator(
-    estimator: Union[RegressorMixin, ClassifierMixin, Pipeline],
+    estimator: Union[RegressorMixin, ClassifierMixin],
     X: ArrayLike,
     y: ArrayLike,
     sample_weight: Optional[NDArray] = None,
     **fit_params,
-) -> Union[RegressorMixin, ClassifierMixin, Pipeline]:
+) -> Union[RegressorMixin, ClassifierMixin]:
     """
     Fit an estimator on training data by distinguishing two cases:
     - the estimator supports sample weights and sample weights are provided.
     - the estimator does not support samples weights or
       samples weights are not provided.
 
-    When the estimator is a sklearn ``Pipeline``, the final step's ``fit``
-    signature is inspected for ``sample_weight`` support, and the weight is
-    routed using sklearn's ``stepname__sample_weight`` convention.
-
     Parameters
     ----------
-    estimator: Union[RegressorMixin, ClassifierMixin, Pipeline]
-        Estimator to train. May be a single estimator or a sklearn
-        ``Pipeline``.
+    estimator: Union[RegressorMixin, ClassifierMixin]
+        Estimator to train.
 
     X: ArrayLike of shape (n_samples, n_features)
         Input data.
@@ -279,7 +274,7 @@ def _fit_estimator(
 
     Returns
     -------
-    Union[RegressorMixin, ClassifierMixin, Pipeline]
+    RegressorMixin
         Fitted estimator.
 
     Examples
@@ -294,23 +289,10 @@ def _fit_estimator(
     >>> check_sklearn_user_model_is_fitted(estimator)
     True
     """
-    # Determine the fit target and sample_weight key based on estimator type
-    if isinstance(estimator, Pipeline):
-        fit_target = estimator[-1]
-        final_step_name = estimator.steps[-1][0]
-        sw_key = f"{final_step_name}__sample_weight"
-    else:
-        fit_target = estimator
-        sw_key = "sample_weight"
-
-    fit_parameters = signature(fit_target.fit).parameters
+    fit_parameters = signature(estimator.fit).parameters
     supports_sw = "sample_weight" in fit_parameters
-
     if supports_sw and sample_weight is not None:
-        # Place fit_params first so explicit sample_weight takes precedence
-        # if a duplicate key is accidentally present in fit_params.
-        merged_params = {**fit_params, sw_key: sample_weight}
-        estimator.fit(X, y, **merged_params)
+        estimator.fit(X, y, sample_weight=sample_weight, **fit_params)
     else:
         estimator.fit(X, y, **fit_params)
     return estimator
@@ -323,32 +305,32 @@ def _check_cv(
 ) -> Union[str, BaseCrossValidator, BaseShuffleSplit]:
     """
     Check if cross-validator is
-    ``None``, ``int``, ``"prefit"``, ``"split"``, ``BaseCrossValidator`` or
-    ``BaseShuffleSplit``.
-    Return a ``LeaveOneOut`` instance if integer equal to -1.
-    Return a ``KFold`` instance if integer superior or equal to 2.
-    Return a ``KFold`` instance if ``None``.
+    `None`, `int`, `"prefit"`, `"split"`, `BaseCrossValidator` or
+    `BaseShuffleSplit`.
+    Return a `LeaveOneOut` instance if integer equal to -1.
+    Return a `KFold` instance if integer superior or equal to 2.
+    Return a `KFold` instance if `None`.
     Else raise error.
 
     Parameters
     ----------
     cv: Optional[Union[int, str, BaseCrossValidator, BaseShuffleSplit]]
-        Cross-validator to check, by default ``None``.
+        Cross-validator to check, by default `None`.
 
     test_size: Optional[Union[int, float]]
         If float, should be between 0.0 and 1.0 and represent the proportion
         of the dataset to include in the test split. If int, represents the
         absolute number of test samples. If None, it will be set to 0.1.
 
-        If cv is not ``"split"``, ``test_size`` is ignored.
+        If cv is not `"split"`, `test_size` is ignored.
 
-        By default ``None``.
+        By default `None`.
 
     random_state: Optional[Union[int, np.random.RandomState]], optional
         Pseudo random number generator state used for random uniform sampling
         for evaluation quantiles and prediction sets.
         Pass an int for reproducible output across multiple function calls.
-        By default ```None``.
+        By default ``None`.
 
     Returns
     -------
@@ -400,7 +382,7 @@ def _check_no_agg_cv(
     groups: Optional[ArrayLike] = None,
 ) -> bool:
     """
-    Check if cross-validator is ``"prefit"``, ``"split"`` or any split
+    Check if cross-validator is `"prefit"`, `"split"` or any split
     equivalent `BaseCrossValidator` or `BaseShuffleSplit`.
 
     Parameters
@@ -417,13 +399,13 @@ def _check_no_agg_cv(
     y: Optional[ArrayLike] of shape (n_samples,)
         Input labels.
 
-        By default ``None``.
+        By default `None`.
 
     groups: Optional[ArrayLike] of shape (n_samples,)
         Group labels for the samples used while splitting the dataset into
         train/test set.
 
-        By default ``None``.
+        By default `None`.
 
     Returns
     -------
@@ -509,18 +491,18 @@ def _check_n_features_in(
     """
     Check the expected number of training features.
     In general it is simply the number of columns in the data.
-    If ``cv=="prefit"`` however,
-    it can be deduced from the estimator's ``n_features_in_`` attribute.
+    If `cv=="prefit"` however,
+    it can be deduced from the estimator's `n_features_in_` attribute.
     These two values absolutely must coincide.
 
     Parameters
     ----------
     cv: Optional[Union[float, str]]
         The cross-validation strategy for computing scores,
-        by default ``None``.
+        by default `None`.
 
     X: ArrayLike of shape (n_samples, n_features)
-        Data passed into the ``fit`` method.
+        Data passed into the `fit` method.
 
     estimator: RegressorMixin
         Backend estimator of MAPIE.
@@ -601,7 +583,7 @@ def _check_alpha_and_n_samples(
 
 def _check_n_jobs(n_jobs: Optional[int] = None) -> None:
     """
-    Check parameter ``n_jobs``.
+    Check parameter `n_jobs`.
 
     Raises
     ------
@@ -627,7 +609,7 @@ def _check_n_jobs(n_jobs: Optional[int] = None) -> None:
 
 def _check_verbose(verbose: int) -> None:
     """
-    Check parameter ``verbose``.
+    Check parameter `verbose`.
 
     Raises
     ------
@@ -804,9 +786,9 @@ def _check_estimator_classification(
     estimator: Optional[ClassifierMixin],
 ) -> ClassifierMixin:
     """
-    Check if estimator is ``None``,
-    and returns a ``LogisticRegression`` instance if necessary.
-    If the ``cv`` attribute is ``"prefit"``,
+    Check if estimator is `None`,
+    and returns a `LogisticRegression` instance if necessary.
+    If the `cv` attribute is `"prefit"`,
     check if estimator is indeed already fitted.
     Parameters
     ----------
@@ -821,14 +803,14 @@ def _check_estimator_classification(
     Returns
     -------
     ClassifierMixin
-        The estimator itself or a default ``LogisticRegression`` instance.
+        The estimator itself or a default `LogisticRegression` instance.
     Raises
     ------
     ValueError
-        If the estimator is not ``None``
+        If the estimator is not `None`
         and has no fit, predict, nor predict_proba methods.
     NotFittedError
-        If the estimator is not fitted and ``cv`` attribute is "prefit".
+        If the estimator is not fitted and `cv` attribute is "prefit".
     """
     if estimator is None:
         return LogisticRegression().fit(X, y)
