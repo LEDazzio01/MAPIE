@@ -289,19 +289,14 @@ def _fit_estimator(
     >>> check_sklearn_user_model_is_fitted(estimator)
     True
     """
-    if isinstance(estimator, Pipeline):
-        final_step_name = estimator.steps[-1][0]
-        sw_key = f"{final_step_name}__sample_weight"
-    else:
-        sw_key = "sample_weight"
-
     if sample_weight is not None:
-        # Place fit_params first so explicit sample_weight takes precedence
-        # if a duplicate key is accidentally present in fit_params.
-        merged_params = {**fit_params, sw_key: sample_weight}
-        estimator.fit(X, y, **merged_params)
-    else:
-        estimator.fit(X, y, **fit_params)
+        if isinstance(estimator, Pipeline):
+            final_step_name = estimator.steps[-1][0]
+            sw_key = f"{final_step_name}__sample_weight"
+        else:
+            sw_key = "sample_weight"
+        fit_params[sw_key] = sample_weight
+    estimator.fit(X, y, **fit_params)
     return estimator
 
 
