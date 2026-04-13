@@ -695,7 +695,9 @@ def test_va_sample_weights_constant() -> None:
         va_cal_ones = VennAbersCalibrator(
             estimator=weighted_estimator, inductive=True, random_state=random_state_va
         )
-        va_cal_ones.fit(X_binary_train, y_binary_train, sample_weight=np.ones(n_samples))
+        va_cal_ones.fit(
+            X_binary_train, y_binary_train, sample_weight=np.ones(n_samples)
+        )
 
         probs_none = va_cal_none.predict_proba(X_binary_test)
         probs_ones = va_cal_ones.predict_proba(X_binary_test)
@@ -727,7 +729,9 @@ def test_va_sample_weights_variable() -> None:
         va_cal_weighted = VennAbersCalibrator(
             estimator=estimator_weighted, inductive=True, random_state=random_state_va
         )
-        va_cal_weighted.fit(X_binary_train, y_binary_train, sample_weight=sample_weights)
+        va_cal_weighted.fit(
+            X_binary_train, y_binary_train, sample_weight=sample_weights
+        )
 
         probs_uniform = va_cal_uniform.predict_proba(X_binary_test)
         probs_weighted = va_cal_weighted.predict_proba(X_binary_test)
