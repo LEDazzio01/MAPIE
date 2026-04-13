@@ -244,7 +244,7 @@ def _fit_estimator(
     estimator: Union[RegressorMixin, ClassifierMixin, Pipeline],
     X: ArrayLike,
     y: ArrayLike,
-    sample_weight: Optional[NDArray] = None,
+    sample_weight: Optional[ArrayLike] = None,
     **fit_params,
 ) -> Union[RegressorMixin, ClassifierMixin, Pipeline]:
     """

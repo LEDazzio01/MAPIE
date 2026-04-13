@@ -8,7 +8,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 from numpy.typing import ArrayLike, NDArray
-from sklearn.datasets import make_regression
+from sklearn.datasets import make_classification, make_regression
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import BaseCrossValidator, KFold, LeaveOneOut, ShuffleSplit
 from sklearn.pipeline import Pipeline
@@ -592,6 +592,53 @@ def test_split_conformal_regressor_pipeline_sample_weight() -> None:
     points, intervals = mapie_reg.predict_interval(X_test)
     assert points.shape == (len(X_test),)
     assert intervals.shape[0] == len(X_test)
+
+
+def test_split_conformal_classifier_pipeline_sample_weight() -> None:
+    """Test that SplitConformalClassifier.fit() routes sample_weight in Pipeline.
+
+    Regression test for https://github.com/scikit-learn-contrib/MAPIE/issues/798
+    """
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+
+    from mapie.classification import SplitConformalClassifier
+    from mapie.utils import train_conformalize_test_split
+
+    X, y = make_classification(
+        n_samples=500,
+        n_features=10,
+        n_informative=5,
+        n_redundant=1,
+        random_state=42,
+    )
+    (X_train, X_conf, X_test, y_train, y_conf, y_test) = train_conformalize_test_split(
+        X,
+        y,
+        train_size=0.6,
+        conformalize_size=0.2,
+        test_size=0.2,
+        random_state=42,
+    )
+    sw = np.random.RandomState(42).rand(len(X_train))
+
+    pipeline = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("lr", LogisticRegression(max_iter=1000)),
+        ]
+    )
+    mapie_clf = SplitConformalClassifier(
+        estimator=pipeline,
+        confidence_level=0.95,
+        prefit=False,
+    )
+    # This should not raise ValueError
+    mapie_clf.fit(X_train, y_train, {"sample_weight": sw})
+    mapie_clf.conformalize(X_conf, y_conf)
+    points, pred_sets = mapie_clf.predict_set(X_test)
+    assert points.shape == (len(X_test),)
+    assert pred_sets.shape[0] == len(X_test)
 
 
 @pytest.mark.parametrize("alpha", [-1, 0, 1, 2, 2.5, "a", ["a", "b"]])
