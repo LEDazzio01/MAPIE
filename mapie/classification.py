@@ -933,8 +933,12 @@ class _MapieClassifier(ClassifierMixin, BaseEstimator):
         )
         # Fit the prediction function
         self.estimator_ = self.estimator_.fit(
-            X, y, y_enc=y_enc, sample_weight=sample_weight,
-            groups=groups, **self._fit_params
+            X,
+            y,
+            y_enc=y_enc,
+            sample_weight=sample_weight,
+            groups=groups,
+            **self._fit_params,
         )
 
         # Predict on calibration data

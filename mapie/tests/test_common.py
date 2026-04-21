@@ -275,7 +275,6 @@ def test_no_fit_predict(MapieEstimator: BaseEstimator) -> None:
         mapie_estimator.predict(X_toy)
 
 
-
 @pytest.mark.parametrize("MapieEstimator", MapieSimpleEstimators())
 def test_default_alpha(MapieEstimator: BaseEstimator) -> None:
     """Test default alpha."""
