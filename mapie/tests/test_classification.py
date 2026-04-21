@@ -975,9 +975,13 @@ def test_results_with_constant_sample_weights(strategy: str) -> None:
     mapie_clf0 = _MapieClassifier(lr, **args_init)
     mapie_clf1 = _MapieClassifier(lr, **args_init)
     mapie_clf2 = _MapieClassifier(lr, **args_init)
-    mapie_clf0.fit(X, y, sample_weight=None)
-    mapie_clf1.fit(X, y, sample_weight=np.ones(shape=n_samples))
-    mapie_clf2.fit(X, y, sample_weight=np.ones(shape=n_samples) * 5)
+    mapie_clf0.fit(X, y)
+    mapie_clf1.fit(
+        X, y, fit_params={"sample_weight": np.ones(shape=n_samples)}
+    )
+    mapie_clf2.fit(
+        X, y, fit_params={"sample_weight": np.ones(shape=n_samples) * 5}
+    )
     y_pred0, y_ps0 = mapie_clf0.predict(
         X,
         alpha=0.2,
