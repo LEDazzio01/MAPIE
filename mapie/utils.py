@@ -1363,6 +1363,23 @@ def _prepare_params(params: Union[dict, None]) -> dict:
     return copy.deepcopy(params) if params else {}
 
 
+def _check_deprecated_sample_weight_kwarg(kwargs: dict) -> None:
+    """Raise ``TypeError`` if ``sample_weight`` appears in *kwargs*.
+
+    Since the ``sample_weight`` routing refactor,
+    ``sample_weight`` must be passed inside ``fit_params``,
+    e.g. ``fit_params={"sample_weight": ...}``.
+    This helper catches the old calling convention early and
+    gives the caller a clear migration message.
+    """
+    if "sample_weight" in kwargs:
+        raise TypeError(
+            "'sample_weight' must be passed inside 'fit_params', "
+            "e.g., fit_params={'sample_weight': ...}. "
+            "Passing it as a top-level keyword argument is not supported."
+        )
+
+
 def _raise_error_if_previous_method_not_called(
     current_method_name: str,
     previous_method_name: str,

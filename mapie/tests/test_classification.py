@@ -1699,3 +1699,11 @@ def test_mapieclassifier_cv_string_check():
 
     with pytest.raises(ValueError, match=r'.*must be equal to "prefit".*'):
         _MapieClassifier(estimator=clf, cv="crossval")
+
+
+def test_sample_weight_as_top_level_kwarg_raises() -> None:
+    """Ensure sample_weight must be passed inside fit_params, not as a kwarg."""
+    clf = LogisticRegression().fit(X_toy, y_toy)
+    mapie_clf = _MapieClassifier(estimator=clf, cv="prefit")
+    with pytest.raises(TypeError, match="fit_params"):
+        mapie_clf.fit(X_toy, y_toy, sample_weight=np.ones(len(X_toy)))

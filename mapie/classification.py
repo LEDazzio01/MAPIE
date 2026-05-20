@@ -28,6 +28,7 @@ from mapie.utils import (
     _check_alpha_and_n_samples,
     _check_cv,
     _check_cv_not_string,
+    _check_deprecated_sample_weight_kwarg,
     _check_estimator_classification,
     _check_n_features_in,
     _check_n_jobs,
@@ -897,6 +898,7 @@ class _MapieClassifier(ClassifierMixin, BaseEstimator):
             The model itself.
         """
         self._fit_params = _prepare_params(kwargs.pop("fit_params", {}))
+        _check_deprecated_sample_weight_kwarg(kwargs)
         predict_params = kwargs.pop("predict_params", {})
 
         if len(predict_params) > 0:

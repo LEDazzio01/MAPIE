@@ -223,9 +223,9 @@ def test_results_with_constant_sample_weights(strategy: str) -> None:
     mapie0 = TimeSeriesRegressor(**STRATEGIES[strategy])
     mapie1 = TimeSeriesRegressor(**STRATEGIES[strategy])
     mapie2 = TimeSeriesRegressor(**STRATEGIES[strategy])
-    mapie0.fit(X, y, sample_weight=None)
-    mapie1.fit(X, y, sample_weight=np.ones(shape=n_samples))
-    mapie2.fit(X, y, sample_weight=np.ones(shape=n_samples) * 5)
+    mapie0.fit(X, y)
+    mapie1.fit(X, y, fit_params={"sample_weight": np.ones(shape=n_samples)})
+    mapie2.fit(X, y, fit_params={"sample_weight": np.ones(shape=n_samples) * 5})
     y_pred0, y_pis0 = mapie0.predict(X, confidence_level=0.95)
     y_pred1, y_pis1 = mapie1.predict(X, confidence_level=0.95)
     y_pred2, y_pis2 = mapie2.predict(X, confidence_level=0.95)
@@ -497,3 +497,13 @@ def test_methods_preservation_in_fit(method: str, cv: str) -> None:
     mapie_ts_reg.fit(X_val, y_val)
     mapie_ts_reg.update(X_test, y_test)
     assert mapie_ts_reg.method == method
+
+
+def test_sample_weight_as_top_level_kwarg_raises() -> None:
+    """Ensure sample_weight must be passed inside fit_params, not as a kwarg."""
+    mapie_ts_reg = TimeSeriesRegressor(
+        cv=BlockBootstrap(n_resamplings=30, n_blocks=5, random_state=random_state),
+        agg_function="mean",
+    )
+    with pytest.raises(TypeError, match="fit_params"):
+        mapie_ts_reg.fit(X, y, sample_weight=np.ones(len(X)))
