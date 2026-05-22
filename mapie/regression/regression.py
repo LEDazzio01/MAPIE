@@ -25,6 +25,7 @@ from mapie.utils import (
     _check_alpha_and_n_samples,
     _check_cv,
     _check_cv_not_string,
+    _check_cv_not_subsample,
     _check_deprecated_sample_weight_kwarg,
     _check_estimator_fit_predict,
     _check_if_param_in_allowed_values,
@@ -408,6 +409,7 @@ class CrossConformalRegressor:
             method, "method", CrossConformalRegressor._VALID_METHODS
         )
         _check_cv_not_string(cv)
+        _check_cv_not_subsample(cv)
 
         self._mapie_regressor = _MapieRegressor(
             estimator=estimator,

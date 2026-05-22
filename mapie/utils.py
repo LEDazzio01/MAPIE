@@ -1337,6 +1337,34 @@ def _check_cv_not_string(cv: Union[int, str, BaseCrossValidator]) -> None:
         )
 
 
+def _check_cv_not_subsample(cv: Union[int, BaseCrossValidator]) -> None:
+    """Check that ``cv`` is not a ``Subsample`` instance.
+
+    ``Subsample`` (bootstrap resampling) should not be used with
+    ``CrossConformalRegressor``.  Users should use the dedicated
+    ``JackknifeAfterBootstrapRegressor`` class instead.
+
+    Parameters
+    ----------
+    cv : Union[int, BaseCrossValidator]
+        The cross-validator to check.
+
+    Raises
+    ------
+    ValueError
+        If ``cv`` is a ``Subsample`` instance.
+    """
+    from mapie.subsample import Subsample
+
+    if isinstance(cv, Subsample):
+        raise ValueError(
+            "'cv' must not be a Subsample instance in "
+            "CrossConformalRegressor. "
+            "Use JackknifeAfterBootstrapRegressor instead for "
+            "bootstrap-based conformal prediction."
+        )
+
+
 def _cast_point_predictions_to_ndarray(
     point_predictions: Union[NDArray, Tuple[NDArray, NDArray]],
 ) -> NDArray:
