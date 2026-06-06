@@ -36,6 +36,7 @@ from mapie.utils import (
     _check_number_bins,
     _check_split_strategy,
     _check_verbose,
+    _compute_quantile,
     _compute_quantiles,
     _fit_estimator,
     _prepare_params,
@@ -795,6 +796,99 @@ def test_alpha_in_predict() -> None:
     mapie_reg.fit(X, y)
     with pytest.warns(UserWarning, match=r"WARNING: ensemble is not util*"):
         mapie_reg.predict(X, ensemble=True)
+
+
+class TestComputeQuantile:
+    """Tests for the unified _compute_quantile function."""
+
+    def test_method_lower_basic(self):
+        """Test regression path produces finite quantiles."""
+        scores = np.random.rand(100, 1)
+        alpha = np.array([0.1, 0.2])
+        result = _compute_quantile(scores, alpha, axis=0, method="lower")
+        assert result.shape == (1, 2)
+        assert np.all(np.isfinite(result))
+
+    def test_method_higher_basic(self):
+        """Test classification path produces finite quantiles."""
+        scores = np.random.rand(100, 1)
+        alpha = np.array([0.1, 0.2])
+        result = _compute_quantile(scores, alpha, axis=0, method="higher")
+        assert result.shape == (1, 2)
+        assert np.all(np.isfinite(result))
+
+    def test_method_higher_matches_old_formula(self):
+        """Test that method='higher' reproduces the old classification
+        quantile formula: quantile(v, (n+1)*(1-a)/n, 'higher')."""
+        np.random.seed(0)
+        for n in [10, 50, 100, 500]:
+            scores = np.random.rand(n, 1)
+            alpha = np.array([0.05, 0.1, 0.2])
+            result = _compute_quantile(scores, alpha, axis=0, method="higher")
+            for i, a in enumerate(alpha):
+                level = min(((n + 1) * (1 - a)) / n, 1.0)
+                expected = np.quantile(scores, level, axis=0, method="higher")
+                np.testing.assert_allclose(result[:, i], expected.ravel())
+
+    def test_reverse_flag(self):
+        """Test reverse=True computes (1-alpha) quantile."""
+        scores = np.arange(1, 101, dtype=float).reshape(-1, 1)
+        alpha = np.array([0.1])
+        normal = _compute_quantile(scores, alpha, method="lower")
+        rev = _compute_quantile(scores, alpha, method="lower", reverse=True)
+        assert normal[0, 0] != rev[0, 0]
+        assert rev[0, 0] < normal[0, 0]
+
+    def test_unbounded_returns_inf(self):
+        """Test unbounded=True with alpha >= 1 returns infinity."""
+        scores = np.random.rand(50, 1)
+        alpha = np.array([1.0])
+        result = _compute_quantile(scores, alpha, method="lower", unbounded=True)
+        assert np.all(np.isinf(result))
+
+    def test_unbounded_normal_alpha(self):
+        """Test unbounded=True with alpha < 1 returns finite value."""
+        scores = np.random.rand(50, 1)
+        alpha = np.array([0.5])
+        result = _compute_quantile(scores, alpha, method="lower", unbounded=True)
+        assert np.all(np.isfinite(result))
+
+    def test_nan_handling(self):
+        """Test NaN-containing scores are handled via nanquantile."""
+        scores = np.array([[1.0], [2.0], [np.nan], [4.0], [5.0]])
+        alpha = np.array([0.5])
+        result = _compute_quantile(scores, alpha, method="lower")
+        assert np.all(np.isfinite(result))
+
+    def test_axis_parameter(self):
+        """Test axis=1 computes quantile along columns."""
+        scores = np.random.rand(3, 100)
+        alpha = np.array([0.5])
+        result = _compute_quantile(scores, alpha, axis=1, method="lower")
+        assert result.shape == (3, 1)
+
+    def test_method_lower_1d_input(self):
+        """Test method='lower' works with 1D input arrays."""
+        scores = np.random.rand(100)
+        alpha = np.array([0.1, 0.2])
+        result = _compute_quantile(scores, alpha, axis=0, method="lower")
+        assert result.shape[0] == 1
+        assert result.shape[1] == 2
+        assert np.all(np.isfinite(result))
+
+    def test_all_nan_raises_value_error(self):
+        """Test that all-NaN scores raise ValueError."""
+        scores = np.full((10, 1), np.nan)
+        alpha = np.array([0.5])
+        with pytest.raises(ValueError, match="All conformity scores are NaN"):
+            _compute_quantile(scores, alpha, method="lower")
+
+    def test_invalid_method_raises_value_error(self):
+        """Test that invalid method raises ValueError."""
+        scores = np.random.rand(50, 1)
+        alpha = np.array([0.1])
+        with pytest.raises(ValueError, match="method must be"):
+            _compute_quantile(scores, alpha, method="invalid")
 
 
 def test_compute_quantiles_value_error():

@@ -740,8 +740,146 @@ def _check_alpha_and_last_axis(vector: NDArray, alpha_np: NDArray):
         return vector, alpha_np
 
 
+def _compute_quantile(
+    conformity_scores: NDArray,
+    alpha_np: NDArray,
+    axis: int = 0,
+    method: str = "lower",
+    reverse: bool = False,
+    unbounded: bool = False,
+) -> NDArray:
+    """Compute the alpha quantile of conformity scores with
+    finite-sample correction.
+
+    Unified quantile computation used by both regression and
+    classification conformity scores. Supports directional
+    quantiles, unbounded prediction sets, and NaN-aware
+    computation.
+
+    Two quantile methods are supported, each with its own
+    finite-sample correction formula:
+
+    - ``"lower"``: used by regression conformity scores.
+      Quantile level: ``ceil(alpha_ref * (n + 1)) / n`` with
+      ``method="lower"``. Operates on signed conformity scores
+      to support directional quantiles via the ``reverse``
+      parameter.
+
+    - ``"higher"``: used by classification conformity scores.
+      Quantile level: ``(n + 1) * (1 - alpha) / n`` with
+      ``method="higher"``. Operates directly on the conformity
+      scores (``reverse`` and ``unbounded`` are ignored).
+
+    Parameters
+    ----------
+    conformity_scores: NDArray of shape (n_samples,) or
+        (n_samples, n_estimators)
+        Values from which the quantile is computed.
+
+    alpha_np: NDArray of shape (n_alpha,)
+        NDArray of floats between ``0`` and ``1``, represents the
+        uncertainty of the confidence set.
+
+    axis: int
+        The axis from which to compute the quantile.
+
+        By default ``0``.
+
+    method: str
+        Quantile interpolation method and correction formula.
+        Must be ``"lower"`` (regression) or ``"higher"``
+        (classification). See above for details.
+
+        By default ``"lower"``.
+
+    reverse: bool
+        Boolean specifying whether we take the upper or lower
+        quantile. If False, the alpha quantile; otherwise the
+        (1-alpha) quantile. Only used when ``method="lower"``.
+
+        By default ``False``.
+
+    unbounded: bool
+        Boolean specifying whether infinite prediction sets
+        could be produced (when alpha_np is greater than or
+        equal to 1.). Only used when ``method="lower"``.
+
+        By default ``False``.
+
+    Returns
+    -------
+    NDArray of shape (1, n_alpha) or (n_samples, n_alpha)
+        The quantiles of the conformity scores.
+
+    Raises
+    ------
+    ValueError
+        If ``method`` is not ``"lower"`` or ``"higher"``.
+    ValueError
+        If all conformity scores are NaN along the reduction
+        axis (``method="lower"`` only).
+    """
+    if method not in ("lower", "higher"):
+        raise ValueError(f"method must be 'lower' or 'higher', got '{method}'.")
+
+    if method == "higher":
+        n = conformity_scores.shape[axis]
+        quantile: NDArray = np.column_stack(
+            [
+                np.nanquantile(
+                    conformity_scores,
+                    min(((n + 1) * (1 - _alpha)) / n, 1.0),
+                    axis=axis,
+                    method="higher",
+                )
+                for _alpha in alpha_np
+            ]
+        )
+        return quantile
+
+    # method == "lower" (regression path)
+    n_ref = conformity_scores.shape[1 - axis] if conformity_scores.ndim > 1 else 1
+    n_calib: int = np.min(np.sum(~np.isnan(conformity_scores), axis=axis))
+    if n_calib == 0:
+        raise ValueError(
+            "All conformity scores are NaN along the reduction axis. "
+            "Cannot compute quantile correction."
+        )
+    signed = 1 - 2 * reverse
+
+    # Adapt alpha w.r.t upper/lower : alpha vs. 1-alpha
+    alpha_ref = (1 - 2 * alpha_np) * reverse + alpha_np
+
+    # Adjust alpha w.r.t quantile correction
+    alpha_cor = np.ceil(alpha_ref * (n_calib + 1)) / n_calib
+    alpha_cor = np.clip(alpha_cor, a_min=0, a_max=1)
+
+    # Compute the target quantiles:
+    # If unbounded is True and alpha is greater than or equal to 1,
+    # the quantile is set to infinity.
+    # Otherwise, the quantile is calculated as the corrected lower
+    # quantile of the signed conformity scores.
+    quantile = signed * np.column_stack(
+        [
+            np.nanquantile(
+                signed * conformity_scores,
+                _alpha_cor,
+                axis=axis,
+                method="lower",
+            )
+            if not (unbounded and _alpha >= 1)
+            else np.inf * np.ones(n_ref)
+            for _alpha, _alpha_cor in zip(alpha_ref, alpha_cor)
+        ]
+    )
+    return quantile
+
+
 def _compute_quantiles(vector: NDArray, alpha: NDArray) -> NDArray:
     """Compute the desired quantiles of a vector.
+
+    Thin wrapper around ``_compute_quantile`` that adds support
+    for 3D input arrays used by classification conformity scores.
 
     Parameters
     ----------
@@ -757,28 +895,26 @@ def _compute_quantiles(vector: NDArray, alpha: NDArray) -> NDArray:
     NDArray of shape (n_alphas, )
         Quantiles of the vector.
     """
-    n = len(vector)
     if len(vector.shape) <= 2:
-        quantiles_ = np.stack(
-            [
-                np.quantile(
-                    vector,
-                    ((n + 1) * (1 - _alpha)) / n,
+        return np.atleast_1d(
+            np.squeeze(
+                _compute_quantile(
+                    conformity_scores=vector,
+                    alpha_np=alpha,
+                    axis=0,
                     method="higher",
                 )
-                for _alpha in alpha
-            ]
+            )
         )
-
     else:
         _check_alpha_and_last_axis(vector, alpha)
-        quantiles_ = np.stack(
+        quantiles_: NDArray = np.array(
             [
-                _compute_quantiles(vector[:, :, i], np.array([alpha_]))
+                _compute_quantiles(vector[:, :, i], np.array([alpha_]))[0]
                 for i, alpha_ in enumerate(alpha)
             ]
-        )[:, 0]
-    return cast(NDArray, quantiles_)
+        )
+        return quantiles_
 
 
 def _check_estimator_classification(

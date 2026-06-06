@@ -14,6 +14,7 @@
 
 ### Improvements and refactoring
 
+- Consolidate quantile computation: extract `_compute_regression_quantile` and `_compute_classification_quantile` functions in `utils.py`, replacing the former `get_quantile` method and `_compute_quantiles` wrapper. No public API changes. (issue #479)
 - Relax the monotonicity check in the `fixed_sequence` FWER procedure: a non-monotonic risk now emits a `UserWarning` (suggesting `split_fixed_sequence`) and infers a direction, instead of raising a `ValueError`. (issue #942)
 - Add validation that a custom `BinaryRisk` returns per-sample occurrence values that are binary indicators (booleans, or values equal to 0 or 1); a `ValueError` is now raised otherwise, as the binary Hoeffding-Bentkus guarantees require it.
 - Add validation to reject `Subsample` as `cv` in `CrossConformalRegressor`, directing users to `JackknifeAfterBootstrapRegressor` instead. (issue #924)
