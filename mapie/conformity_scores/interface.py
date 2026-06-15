@@ -5,8 +5,6 @@ from sklearn.base import BaseEstimator
 
 from numpy.typing import NDArray
 
-from mapie.utils import _compute_quantile
-
 
 class BaseConformityScore(metaclass=ABCMeta):
     """
@@ -84,56 +82,6 @@ class BaseConformityScore(metaclass=ABCMeta):
         NDArray of shape (n_samples,)
             Conformity scores.
         """
-
-    @staticmethod
-    def get_quantile(
-        conformity_scores: NDArray,
-        alpha_np: NDArray,
-        axis: int = 0,
-        reversed: bool = False,
-        unbounded: bool = False,
-    ) -> NDArray:
-        """
-        Compute the alpha quantile of the conformity scores.
-
-        Parameters
-        ----------
-        conformity_scores: NDArray of shape (n_samples,)
-            Values from which the quantile is computed.
-
-        alpha_np: NDArray of shape (n_alpha,)
-            NDArray of floats between `0` and `1`, represents the
-            uncertainty of the confidence set.
-
-        axis: int
-            The axis from which to compute the quantile.
-
-            By default `0`.
-
-        reversed: bool
-            Boolean specifying whether we take the upper or lower quantile,
-            if False, the alpha quantile, otherwise the (1-alpha) quantile.
-
-            By default `False`.
-
-        unbounded: bool
-            Boolean specifying whether infinite prediction sets
-            could be produced (when alpha_np is greater than or equal to 1.).
-
-            By default `False`.
-
-        Returns
-        -------
-        NDArray of shape (1, n_alpha) or (n_samples, n_alpha)
-            The quantiles of the conformity scores.
-        """
-        return _compute_quantile(
-            conformity_scores,
-            alpha_np,
-            axis=axis,
-            reverse=reversed,
-            unbounded=unbounded,
-        )
 
     @abstractmethod
     def predict_set(self, X: NDArray, alpha_np: NDArray, **kwargs):
