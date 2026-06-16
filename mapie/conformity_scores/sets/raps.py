@@ -11,7 +11,8 @@ from mapie._machine_precision import EPSILON
 from mapie.conformity_scores.sets.aps import APSConformityScore
 from mapie.conformity_scores.sets.utils import get_true_label_position
 from mapie.metrics.classification import classification_mean_width_score
-from mapie.utils import _check_alpha_and_n_samples, _compute_classification_quantile
+from mapie.utils import _check_alpha_and_n_samples
+from mapie.conformity_scores.utils import _compute_classification_quantile
 
 
 class RAPSConformityScore(APSConformityScore):

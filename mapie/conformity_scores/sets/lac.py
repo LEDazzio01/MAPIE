@@ -7,7 +7,7 @@ from sklearn.model_selection import BaseCrossValidator
 
 from mapie._machine_precision import EPSILON
 from numpy.typing import NDArray
-from mapie.utils import _compute_classification_quantile
+from mapie.conformity_scores.utils import _compute_classification_quantile
 
 
 class LACConformityScore(BaseClassificationScore):

@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 from mapie._machine_precision import EPSILON
 from mapie.conformity_scores.interface import BaseConformityScore
 from mapie.estimator.regressor import EnsembleRegressor
-from mapie.utils import _compute_regression_quantile
+from mapie.conformity_scores.utils import _compute_regression_quantile
 
 
 class BaseRegressionScore(BaseConformityScore, metaclass=ABCMeta):

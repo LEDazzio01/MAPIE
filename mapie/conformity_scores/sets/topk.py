@@ -7,7 +7,7 @@ from sklearn.model_selection import BaseCrossValidator
 from mapie._machine_precision import EPSILON
 from mapie.conformity_scores.classification import BaseClassificationScore
 from mapie.conformity_scores.sets.utils import get_true_label_position
-from mapie.utils import _compute_classification_quantile
+from mapie.conformity_scores.utils import _compute_classification_quantile
 
 
 class TopKConformityScore(BaseClassificationScore):

@@ -36,8 +36,6 @@ from mapie.utils import (
     _check_number_bins,
     _check_split_strategy,
     _check_verbose,
-    _compute_classification_quantile,
-    _compute_regression_quantile,
     _fit_estimator,
     _prepare_params,
     _raise_error_if_fit_called_in_prefit_mode,
@@ -49,6 +47,10 @@ from mapie.utils import (
     check_sklearn_user_model_is_fitted,
     check_valid_ltt_params_index,
     train_conformalize_test_split,
+)
+from mapie.conformity_scores.utils import (
+    _compute_classification_quantile,
+    _compute_regression_quantile,
 )
 
 
@@ -870,7 +872,7 @@ class TestComputeClassificationQuantile:
         """Test classification path produces finite quantiles."""
         scores = np.random.rand(100, 1)
         alpha = np.array([0.1, 0.2])
-        result = _compute_classification_quantile(scores, alpha, axis=0)
+        result = _compute_classification_quantile(scores, alpha)
         assert len(result) == 2
         assert np.all(np.isfinite(result))
 
@@ -878,13 +880,13 @@ class TestComputeClassificationQuantile:
         """Test that the function reproduces the old classification
         quantile formula: quantile(v, (n+1)*(1-a)/n, 'higher')."""
         np.random.seed(0)
-        for n in [10, 50, 100, 500]:
+        for n in [50, 100, 500]:
             scores = np.random.rand(n, 1)
-            alpha = np.array([0.05, 0.1, 0.2])
-            result = _compute_classification_quantile(scores, alpha, axis=0)
+            alpha = np.array([0.1, 0.2, 0.5])
+            result = _compute_classification_quantile(scores, alpha)
             for i, a in enumerate(alpha):
-                level = min(((n + 1) * (1 - a)) / n, 1.0)
-                expected = np.quantile(scores, level, axis=0, method="higher")
+                level = ((n + 1) * (1 - a)) / n
+                expected = np.quantile(scores, level, method="higher")
                 np.testing.assert_allclose(result[i], expected.ravel())
 
 

@@ -9,7 +9,7 @@ from sklearn.utils import check_random_state
 from mapie._machine_precision import EPSILON
 from mapie.conformity_scores.sets.naive import NaiveConformityScore
 from mapie.conformity_scores.sets.utils import check_include_last_label
-from mapie.utils import _compute_classification_quantile
+from mapie.conformity_scores.utils import _compute_classification_quantile
 
 
 class APSConformityScore(NaiveConformityScore):
