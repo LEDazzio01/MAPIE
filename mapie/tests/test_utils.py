@@ -36,6 +36,8 @@ from mapie.utils import (
     _check_number_bins,
     _check_split_strategy,
     _check_verbose,
+    _compute_classification_quantile,
+    _compute_regression_quantile,
     _fit_estimator,
     _prepare_params,
     _raise_error_if_fit_called_in_prefit_mode,
@@ -47,10 +49,6 @@ from mapie.utils import (
     check_sklearn_user_model_is_fitted,
     check_valid_ltt_params_index,
     train_conformalize_test_split,
-)
-from mapie.conformity_scores.utils import (
-    _compute_classification_quantile,
-    _compute_regression_quantile,
 )
 
 
