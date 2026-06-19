@@ -57,6 +57,7 @@
 * Imran Ahamed <immu4989@gmail.com>
 * Sacha Braun <ElSacho>
 * Nazim Fadli <nazimfadli25@gmail.com>
+* Damien Bouet <Damien-Bouet>
 * Edgar Jaber <EdgarJaber>
 
 To be continued ...
